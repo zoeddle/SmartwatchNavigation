@@ -1,4 +1,4 @@
-package com.example.carola.smartwatchoutdoornavigation;
+package com.example.carola.smartwatchnavigation;
 
 import android.content.Context;
 import android.net.wifi.ScanResult;

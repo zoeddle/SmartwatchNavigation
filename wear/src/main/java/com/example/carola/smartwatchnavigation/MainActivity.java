@@ -1,4 +1,4 @@
-package com.example.carola.smartwatchoutdoornavigation;
+package com.example.carola.smartwatchnavigation;
 
 import android.app.Activity;
 import android.os.Bundle;

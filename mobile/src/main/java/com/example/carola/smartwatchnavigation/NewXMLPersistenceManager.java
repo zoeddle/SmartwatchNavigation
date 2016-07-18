@@ -1,4 +1,4 @@
-package com.example.carola.smartwatchoutdoornavigation;
+package com.example.carola.smartwatchnavigation;
 
 import org.jdom2.Document;
 import org.jdom2.Element;

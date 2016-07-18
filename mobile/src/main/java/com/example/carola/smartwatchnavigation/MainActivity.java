@@ -1,4 +1,4 @@
-package com.example.carola.smartwatchoutdoornavigation;
+package com.example.carola.smartwatchnavigation;
 
 import android.Manifest;
 import android.app.SearchManager;
@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
-import android.os.Parcelable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -34,7 +33,7 @@ public class MainActivity extends AppCompatActivity{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(com.example.carola.smartwatchnavigation.R.layout.activity_main);
 
         permissions = new String[]{
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -48,7 +47,7 @@ public class MainActivity extends AppCompatActivity{
 
         allNodes = findExistingNodes();
 
-        final Button buttonSetting = (Button) findViewById(R.id.b_settings);
+        final Button buttonSetting = (Button) findViewById(com.example.carola.smartwatchnavigation.R.id.b_settings);
         buttonSetting.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
@@ -59,7 +58,7 @@ public class MainActivity extends AppCompatActivity{
         });
 
 
-        final Button buttonNavigation = (Button) findViewById(R.id.b_navigation);
+        final Button buttonNavigation = (Button) findViewById(com.example.carola.smartwatchnavigation.R.id.b_navigation);
         buttonNavigation.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
@@ -129,11 +128,11 @@ public class MainActivity extends AppCompatActivity{
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the options menu from XML
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.options_menu, menu);
+        inflater.inflate(com.example.carola.smartwatchnavigation.R.menu.options_menu, menu);
 
         // Get the SearchView and set the searchable configuration
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView = (SearchView) menu.findItem(R.id.search).getActionView();
+        SearchView searchView = (SearchView) menu.findItem(com.example.carola.smartwatchnavigation.R.id.search).getActionView();
         // Assumes current activity is the searchable activity
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
         searchView.setIconifiedByDefault(false); // Do not iconify the widget; expand it by default

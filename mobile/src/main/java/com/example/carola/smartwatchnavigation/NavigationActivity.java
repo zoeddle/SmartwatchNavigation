@@ -1,22 +1,17 @@
-package com.example.carola.smartwatchoutdoornavigation;
+package com.example.carola.smartwatchnavigation;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
-import android.hardware.Camera;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 
 public class NavigationActivity extends AppCompatActivity {
 
@@ -28,9 +23,9 @@ public class NavigationActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_navigation);
+        setContentView(com.example.carola.smartwatchnavigation.R.layout.activity_navigation);
 
-        image = (ImageView) findViewById(R.id.i_floorPlan);
+        image = (ImageView) findViewById(com.example.carola.smartwatchnavigation.R.id.i_floorPlan);
         Bitmap bitmap = ((BitmapDrawable) image.getDrawable()).getBitmap();
 
         mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
@@ -43,7 +38,7 @@ public class NavigationActivity extends AppCompatActivity {
         for(int i = 0; i<existingNodes.size(); i++){
                     drawNode(existingNodes.get(i).x, existingNodes.get(i).y);
                 }
-            aStar(existingNodes,existingNodes.get(0), existingNodes.get(7));
+            //aStar(existingNodes,existingNodes.get(0), existingNodes.get(7));
         }
 
         drawLine(existingNodes.get(0), existingNodes.get(1));
@@ -77,7 +72,7 @@ public class NavigationActivity extends AppCompatActivity {
 
         image.setImageBitmap(mutableBitmap);
     }
-
+/*‚
     private ArrayList<Node> aStar(ArrayList<Node> nodeList, Node start, Node end){
         ArrayList<Node> openList = new ArrayList<>();
         ArrayList<Node> closedList = new ArrayList<>();
@@ -148,7 +143,6 @@ public class NavigationActivity extends AppCompatActivity {
         return nodeWithMinF;
 
     }
-
     private  void expandNode(Node currentNode){
         // überprüft alle Nachfolgeknoten und fügt sie der Open List hinzu, wenn entweder
 // - der Nachfolgeknoten zum ersten Mal gefunden wird oder
@@ -262,4 +256,5 @@ public class NavigationActivity extends AppCompatActivity {
 
         return ret;
     }
+    */
 }
