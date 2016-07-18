@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Smartwatch Navigation</string>
+    <string name="app_label">App Label</string>
+    <string name="search_hint">Ort eingeben</string>
+    <string name="search_title">Suche</string>
+    <string name="button_lastSearch">zuletzt gesuchte Orte</string>
+    <string name="button_favouriteSearch">Favoriten</string>
+    <string name="button_settings">Einstellungen</string>
+    <string name="title_activity_setting">Einstellungen</string>
+    <string name="pref_navigationHelp">Navigationshilfe</string>
+    <string name="pref_sound">Ton</string>
+    <string name="pref_hapticalFeedback">Haptisches Feedback</string>
+    <string name="pref_soundSetting">Ton Einstellungen</string>
+    <string name="pref_soundElevator">Fahrstuhl</string>
+    <string name="pref_soundStairs">Treppe</string>
+    <string name="pref_soundNavigatio">Navigations Ansagen</string>
+    <string name="habticalFeedbackSetting">Haptisches Feedback Einstellungen</string>
+    <string name="hapticalFeedbackLeft">links</string>
+    <string name="hapticalFeedbackRight">rechts</string>
+    <string name="hapticalFeedbackStraightOn">gerade aus</string>
+    <string name="hapticalFeedbackElevator">Fahrstuhl</string>
+    <string name="hapticalFeedbackStairs">Treppe</string>
+</resources>
