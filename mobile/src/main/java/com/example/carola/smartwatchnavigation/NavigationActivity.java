@@ -7,11 +7,13 @@ import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class NavigationActivity extends AppCompatActivity {
 
@@ -32,17 +34,22 @@ public class NavigationActivity extends AppCompatActivity {
 
         canvas = new Canvas(mutableBitmap);
 
-        ArrayList<Node> existingNodes = (ArrayList<Node>) getIntent().getSerializableExtra("allExistingNodes");
+        //ArrayList<Node> existingNodes = (ArrayList<Node>) getIntent().getSerializableExtra("allExistingNodes");
+
+        ArrayList<Node> existingNodes = Singleton.getInstance().getExistingNodes();
 
         if(existingNodes != null){
         for(int i = 0; i<existingNodes.size(); i++){
                     drawNode(existingNodes.get(i).x, existingNodes.get(i).y);
                 }
-            //aStar(existingNodes,existingNodes.get(0), existingNodes.get(7));
+                ArrayList<Node> path = aStar(existingNodes.get(0), existingNodes.get(7));
+            if(path != null){
+                Log.e("Liste", "Liste erstellt");
+            }
+
         }
 
         drawLine(existingNodes.get(0), existingNodes.get(1));
-        
     }
 
     private void drawNode(float x, float y) {
@@ -72,189 +79,138 @@ public class NavigationActivity extends AppCompatActivity {
 
         image.setImageBitmap(mutableBitmap);
     }
-/*‚
-    private ArrayList<Node> aStar(ArrayList<Node> nodeList, Node start, Node end){
-        ArrayList<Node> openList = new ArrayList<>();
-        ArrayList<Node> closedList = new ArrayList<>();
+
+    private ArrayList<Node> aStar(Node start, Node end){
+        ArrayList<PathNode> openList = new ArrayList<>();
+        Set<Node> closedList = new HashSet<>();
         ArrayList<Node> path = new ArrayList<>();
 
-        Node currentNode = start;
-
+        Node startNode = start;
+        PathNode currentNode = new PathNode(null,startNode,0,0);
 
         // Initialisierung der Open List, die Closed List ist noch leer
         // (die Priorität bzw. der f Wert des Startknotens ist unerheblich)
-
-        openList.add(start);
+        openList.add(currentNode);
 
         // diese Schleife wird durchlaufen bis entweder
         // - die optimale Lösung gefunden wurde oder
         // - feststeht, dass keine Lösung existiert
-
         while(!openList.isEmpty()){
 
         // Knoten mit dem geringsten f Wert aus der Open List entfernen
-
-        Node nodeWithMinimalF = findNodeWithMinimalF(currentNode, end, nodeList);
+        PathNode nodeWithMinimalF = findNodeWithMinimalF(openList);
             currentNode = nodeWithMinimalF;
         openList.remove(nodeWithMinimalF);
 
         // Wurde das Ziel gefunden?
-        if (currentNode.equals(end)){
-        return path;
+        if (currentNode.node == end){
+            //path.add(currentNode.node);
+            while (currentNode.node != start){
+                path.add(currentNode.node);
+                currentNode = currentNode.predecessorNode;
+            }
+            path.add(start);
+            return path;
         }
 
         // Der aktuelle Knoten soll durch nachfolgende Funktionen
         // nicht weiter untersucht werden damit keine Zyklen entstehen
-
-            closedList.add(currentNode);
+            closedList.add(currentNode.node);
 
         // Wenn das Ziel noch nicht gefunden wurde: Nachfolgeknoten
         // des aktuellen Knotens auf die Open List setzen
-
-        expandNode(currentNode);
+        expandNode(currentNode,openList,closedList,end);
         }
 
         // die Open List ist leer, es existiert kein Pfad zum Ziel
         return null;
     }
 
-    private Node findNodeWithMinimalF(Node currentNode, Node endNode, ArrayList<Node> nodeList) {
-        Node nodeWithMinF = null;
-        ArrayList<Node> neighbourList = new ArrayList<>();
-        for (int i =0; i<currentNode.neighbours.size();i++){
-            for (int j = 0; j<nodeList.size();j++){
-                if(nodeList.get(j).name.equals(currentNode.neighbours.get(i))){
-                    double cost = Math.sqrt((currentNode.x-nodeList.get(j).x) * (currentNode.x-nodeList.get(j).x) + (currentNode.y-nodeList.get(j).y) * (currentNode.y-nodeList.get(j).y));
-                    double costEnd = Math.sqrt((endNode.x-nodeList.get(j).x) * (endNode.x-nodeList.get(j).x) + (endNode.y-nodeList.get(j).y) * (endNode.y-nodeList.get(j).y));
-                    nodeList.get(j).cost = (float) (currentNode.cost + cost + costEnd);
-                    neighbourList.add(nodeList.get(j));
-                }
-            }
-        }
-        nodeWithMinF = neighbourList.get(0);
-        for (int x = 0; x<neighbourList.size(); x++)
-        {
-            if(neighbourList.get(x).cost < nodeWithMinF.cost){
-                nodeWithMinF = neighbourList.get(x);
-            }
-        }
+    private PathNode findNodeWithMinimalF(ArrayList<PathNode> openList) {
 
+        PathNode nodeWithMinF = openList.get(0);
+
+        for (PathNode node : openList){
+            if (node.f < nodeWithMinF.f){
+                nodeWithMinF = node;
+            }
+        }
 
         return nodeWithMinF;
 
     }
-    private  void expandNode(Node currentNode){
+    private  void expandNode(PathNode currentNode, ArrayList<PathNode> openList, Set<Node> closedList, Node end){
         // überprüft alle Nachfolgeknoten und fügt sie der Open List hinzu, wenn entweder
-// - der Nachfolgeknoten zum ersten Mal gefunden wird oder
-// - ein besserer Weg zu diesem Knoten gefunden wird
-                foreach successor of currentNode
-        // wenn der Nachfolgeknoten bereits auf der Closed List ist – tue nichts
-        if closedlist.contains(successor) then
-        continue
-                // g Wert für den neuen Weg berechnen: g Wert des Vorgängers plus
-                // die Kosten der gerade benutzten Kante
-                tentative_g = g(currentNode) + c(currentNode, successor)
-        // wenn der Nachfolgeknoten bereits auf der Open List ist,
-        // aber der neue Weg nicht besser ist als der alte – tue nichts
-        if openlist.contains(successor) and tentative_g >= g(successor) then
-        continue
-                // Vorgängerzeiger setzen und g Wert merken
-                successor.predecessor := currentNode
-        g(successor) = tentative_g
-        // f Wert des Knotens in der Open List aktualisieren
-        // bzw. Knoten mit f Wert in die Open List einfügen
-        f := tentative_g + h(successor)
-        if openlist.contains(successor) then
-        openlist.decreaseKey(successor, f)
-        else
-        openlist.enqueue(successor, f)
-        end
-                end
-    }
+        // - der Nachfolgeknoten zum ersten Mal gefunden wird oder
+        // - ein besserer Weg zu diesem Knoten gefunden wird
 
-    public LinkedList<Node> getPath(Node start, Node exit) {
-        LinkedList<Node> foundPath = new LinkedList<Node>();
-        LinkedList<Node> opensList= new LinkedList<Node>();
-        LinkedList<Node> closedList= new LinkedList<Node>();
-        HashMap<Node, Integer> gscore = new HashMap<Node, Integer>();
-        HashMap<Node, Node> cameFrom = new HashMap<Node, Node>();
-        Node x = new Node();
-        gscore.put(start, 0);
-        opensList.add(start);
-        while(!opensList.isEmpty()){
+        //for(PathNode successor : currentNode.node.neighbours){
+        for(Node successor : (List<Node>)currentNode.node.neighbours){
+                boolean foundInOpenList = false;
 
-            int min = -1;
-            //searching for minimal F score
-            for(Node f : opensList){
-                if(min==-1){
-                    min = gscore.get(f)+getH(f,exit);
-                    x = f;
-                }else{
-                    int currf = gscore.get(f)+getH(f,exit);
-                    if(min > currf){
-                        min = currf;
-                        x = f;
-                    }
+            // wenn der Nachfolgeknoten bereits auf der Closed List ist – tue nichts
+            if (closedList.contains(successor)) {
+                continue;
+            }
+
+            // Überrpüfen ob Knoten in der Open List, um PathNode zu erhalten
+            PathNode successorPathNode = null;
+
+            for(PathNode OpenListNode : openList) {
+                if(OpenListNode.node == successor) {
+                    successorPathNode = OpenListNode;
+                    foundInOpenList = true;
+                    break;
                 }
             }
-            if(x == exit){
-                //path reconstruction
-                Node curr = exit;
-                while(curr != start){
-                    foundPath.addFirst(curr);
-                    curr = cameFrom.get(curr);
-                }
-                return foundPath;
+
+            // Falls nicht in OpenList gefunden, wird Knoten das erstemal besucht, d.h. PathNode anlegen für den Knoten
+            if(successorPathNode == null) {
+                successorPathNode = new PathNode();
+                successorPathNode.node = successor;
             }
-            opensList.remove(x);
-            closedList.add(x);
-            for(Node y : x.getNeighbourhood()){
-                if(!(y.getType()==FieldTypes.PAVEMENT ||y.getType() == FieldTypes.GRASS) || closedList.contains(y) || !(y.getStudent()==null))
-                {
-                    continue;
-                }
-                int tentGScore = gscore.get(x) + getDist(x,y);
-                boolean distIsBetter = false;
-                if(!opensList.contains(y)){
-                    opensList.add(y);
-                    distIsBetter = true;
-                }else if(tentGScore < gscore.get(y)){
-                    distIsBetter = true;
-                }
-                if(distIsBetter){
-                    cameFrom.put(y, x);
-                    gscore.put(y, tentGScore);
-                }
+
+            // g Wert für den neuen Weg berechnen: g Wert des Vorgängers plus
+            // die Kosten der gerade benutzten Kante
+            float c = calculateC(currentNode,successorPathNode);
+            float tentative_cost = currentNode.cost + c;
+
+            // wenn der Nachfolgeknoten bereits auf der Open List ist,
+            // aber der neue Weg nicht besser ist als der alte – tue nichts
+            if (foundInOpenList && tentative_cost >= successorPathNode.cost)  {
+                continue;
             }
-        }
 
-        return foundPath;
+            // Vorgängerzeiger setzen und g Wert merken
+            //successor.predecessor := currentNodes
+            successorPathNode.predecessorNode = currentNode;
+            successorPathNode.cost = tentative_cost;
+
+            // f Wert des Knotens in der Open List aktualisieren
+            // bzw. Knoten mit f Wert in die Open List einfügen
+            float h = calculateH(successorPathNode, end);
+            successorPathNode.f = tentative_cost + h;
+
+            if (foundInOpenList){
+                Log.d("node", "node ist gleich");
+                //openList.decreaseKey(successor, f);
+                continue;
+            }
+            else
+            {
+                openList.add(successorPathNode);
+            }
+
+        }
     }
 
-    private int getH(Node start, Node end){
-        int x;
-        int y;
-        x = start.getX()-end.getX();
-        y = start.getY() - end.getY();
-        if(x<0){
-            x = x* (-1);
-        }
-        if(y<0){
-            y = y * (-1);
-        }
-        return x+y;
+    private float calculateH(PathNode successor, Node end) {
+        return (float) Math.sqrt((successor.node.x-end.x) * (successor.node.x-end.x) + (successor.node.y-end.y) * (successor.node.y-end.y));
     }
-    private int getDist(Node start, Node end){
-        int ret = 0;
-        if(end.getType() == FieldTypes.PAVEMENT){
-            ret = 8;
-        }else if(start.getX() == end.getX() || start.getY() == end.getY()){
-            ret = 10;
-        }else{
-            ret = 14;
-        }
 
-        return ret;
+    private float calculateC(PathNode currentNode, PathNode successor) {
+        return (float) Math.sqrt((currentNode.node.x-successor.node.x) * (currentNode.node.x-successor.node.x) + (currentNode.node.y-successor.node.y) * (currentNode.node.y-successor.node.y));
     }
-    */
+
+
 }

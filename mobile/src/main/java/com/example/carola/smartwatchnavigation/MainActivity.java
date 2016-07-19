@@ -63,8 +63,9 @@ public class MainActivity extends AppCompatActivity{
             public void onClick(View v) {
 
                 //TODO Permission Check
+                Singleton.getInstance().setExistingNodes(allNodes);
                 Intent i = new Intent(MainActivity.this, NavigationActivity.class);
-                i.putExtra("allExistingNodes", allNodes );
+                //i.putExtra("allExistingNodes", allNodes );
                 startActivity(i);
 
             }
