@@ -10,6 +10,7 @@ public class Singleton {
     private static Singleton mInstance = null;
 
     private ArrayList<Node> allExistingNodes;
+    private Node searchNode;
 
 
     public static Singleton getInstance(){
@@ -26,5 +27,13 @@ public class Singleton {
 
     public void setExistingNodes(ArrayList<Node> value){
         allExistingNodes = value;
+    }
+
+    public Node getSearchNode() {
+        return searchNode;
+    }
+
+    public void setSearchNode(Node searchNode) {
+        this.searchNode = searchNode;
     }
 }

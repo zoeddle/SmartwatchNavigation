@@ -58,18 +58,18 @@ public class MainActivity extends AppCompatActivity{
         });
 
 
-        final Button buttonNavigation = (Button) findViewById(com.example.carola.smartwatchnavigation.R.id.b_navigation);
-        buttonNavigation.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-
-                //TODO Permission Check
-                Singleton.getInstance().setExistingNodes(allNodes);
-                Intent i = new Intent(MainActivity.this, NavigationActivity.class);
-                //i.putExtra("allExistingNodes", allNodes );
-                startActivity(i);
-
-            }
-        });
+//        final Button buttonNavigation = (Button) findViewById(com.example.carola.smartwatchnavigation.R.id.b_navigation);
+//        buttonNavigation.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) {
+//
+//                //TODO Permission Check
+//                Singleton.getInstance().setExistingNodes(allNodes);
+//                Intent i = new Intent(MainActivity.this, NavigationActivity.class);
+//                //i.putExtra("allExistingNodes", allNodes );
+//                startActivity(i);
+//
+//            }
+//        });
 
         handleIntent(getIntent());
 
@@ -85,7 +85,15 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void doMySearch(String query) {
-
+        Log.d("SuchString", query);
+        for(Node searchNode : allNodes){
+            if (searchNode.searchName.toLowerCase().equals(query.toLowerCase())){
+                Singleton.getInstance().setSearchNode(searchNode);
+                Singleton.getInstance().setExistingNodes(allNodes);
+                Intent i = new Intent(MainActivity.this, NavigationActivity.class);
+                startActivity(i);
+            }
+        }
     }
 
     private boolean hasPermissions(Context context, String[] permissions) {

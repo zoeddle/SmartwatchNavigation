@@ -42,14 +42,28 @@ public class NavigationActivity extends AppCompatActivity {
         for(int i = 0; i<existingNodes.size(); i++){
                     drawNode(existingNodes.get(i).x, existingNodes.get(i).y);
                 }
-                ArrayList<Node> path = aStar(existingNodes.get(0), existingNodes.get(7));
+            ArrayList<Node> path;
+            if(Singleton.getInstance().getSearchNode()!= null){
+                path = aStar(existingNodes.get(0), Singleton.getInstance().getSearchNode());
+            }
+            else {
+                path = aStar(existingNodes.get(0), existingNodes.get(7));
+            }
             if(path != null){
                 Log.e("Liste", "Liste erstellt");
+
+                Node currNodeToDraw = null;
+                for(Node nextNodeToDraw : path) {
+                    if (currNodeToDraw != null) {
+                        drawLine(currNodeToDraw,nextNodeToDraw);
+                    }
+                    currNodeToDraw = nextNodeToDraw;
+                }
             }
 
         }
 
-        drawLine(existingNodes.get(0), existingNodes.get(1));
+        //drawLine(existingNodes.get(0), existingNodes.get(1));
     }
 
     private void drawNode(float x, float y) {
