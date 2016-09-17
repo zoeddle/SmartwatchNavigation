@@ -67,12 +67,14 @@ public class NewXMLPersistenceManager implements PersistenceManager {
                 for(Iterator i$1 = fingerPrint.getChild("technology").getChildren().iterator(); i$1.hasNext();
                     ((List)positionInformation.get(technologyName)).add(new PositionInformation(fingerPrint.getAttributeValue("name"), signalInformationData))) {
                     Element technology = (Element)i$1.next();
-                    technologyName = technology.getAttributeValue("name");
+                    //technologyName = technology.getAttributeValue("name");
+                    //TODO aus List element suchen
+                    technologyName = "WIFI";
                     signalInformationData = new HashMap();
-                    Iterator i$2 = technology.getChildren().iterator();
+                    //Iterator i$2 = technology.getChildren().iterator();
 
-                    while(i$2.hasNext()) {
-                        Element signalInformation = (Element)i$2.next();
+                    while(i$1.hasNext()) {
+                        Element signalInformation = (Element)i$1.next();
                         signalInformationData.put(signalInformation.getAttributeValue("id"), new SignalInformation(Double.parseDouble(signalInformation.getValue())));
                     }
 

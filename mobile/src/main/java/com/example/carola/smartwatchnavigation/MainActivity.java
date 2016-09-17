@@ -26,9 +26,7 @@ public class MainActivity extends AppCompatActivity{
 
     private static final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 3;
     String[] permissions;
-    private PositionManager positionManager;
-    private NewXMLPersistenceManager xmlPersistenceManager;
-    ArrayList<Node> allNodes;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +43,7 @@ public class MainActivity extends AppCompatActivity{
             //show Massage
         }
 
-        allNodes = findExistingNodes();
+        //allNodes = findExistingNodes();
 
         final Button buttonSetting = (Button) findViewById(com.example.carola.smartwatchnavigation.R.id.b_settings);
         buttonSetting.setOnClickListener(new View.OnClickListener() {
@@ -86,14 +84,17 @@ public class MainActivity extends AppCompatActivity{
 
     private void doMySearch(String query) {
         Log.d("SuchString", query);
-        for(Node searchNode : allNodes){
-            if (searchNode.searchName.toLowerCase().equals(query.toLowerCase())){
-                Singleton.getInstance().setSearchNode(searchNode);
-                Singleton.getInstance().setExistingNodes(allNodes);
-                Intent i = new Intent(MainActivity.this, NavigationActivity.class);
-                startActivity(i);
-            }
-        }
+        Intent i = new Intent(MainActivity.this, NavigationActivity.class);
+        i.putExtra("searchString", query);
+        startActivity(i);
+//        for(Node searchNode : allNodes){
+//            if (searchNode.searchName.toLowerCase().equals(query.toLowerCase())){
+//                Singleton.getInstance().setSearchNode(searchNode);
+//                //Singleton.getInstance().setExistingNodes(allNodes);
+//                Intent i = new Intent(MainActivity.this, NavigationActivity.class);
+//                startActivity(i);
+//            }
+//        }
     }
 
     private boolean hasPermissions(Context context, String[] permissions) {
@@ -107,29 +108,30 @@ public class MainActivity extends AppCompatActivity{
         return true;
     }
 
-    private ArrayList<Node> findExistingNodes() {
-        File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "myHome.xml");
-
-        try {
-            xmlPersistenceManager = new NewXMLPersistenceManager(file);
-            positionManager = new PositionManager(xmlPersistenceManager);
-            Log.d("positionManager", "initialized");
-            List<String> positions = positionManager.getMappedPositions();
-            if (positions != null){
-                ArrayList<Node> actuallyNodes = new ArrayList<Node>();
-                for(String nodeName : positions) {
-                    Node nodeToAdd = xmlPersistenceManager.getNodeData(nodeName);
-                    actuallyNodes.add(nodeToAdd);
-                }
-                return actuallyNodes;
-
-            }
-        } catch (PositioningPersistenceException e) {
-
-        }
-
-        return null;
-    }
+//    private ArrayList<Node> findExistingNodes() {
+//        File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "myHome.xml");
+//        //File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "og6Information.xml");
+//
+//        try {
+//            xmlPersistenceManager = new NewXMLPersistenceManager(file);
+//            positionManager = new PositionManager(xmlPersistenceManager);
+//            Log.d("positionManager", "initialized");
+//            List<String> positions = positionManager.getMappedPositions();
+//            if (positions != null){
+//                ArrayList<Node> actuallyNodes = new ArrayList<Node>();
+//                for(String nodeName : positions) {
+//                    Node nodeToAdd = xmlPersistenceManager.getNodeData(nodeName);
+//                    actuallyNodes.add(nodeToAdd);
+//                }
+//                return actuallyNodes;
+//
+//            }
+//        } catch (PositioningPersistenceException e) {
+//
+//        }
+//
+//        return null;
+//    }
 
 
 

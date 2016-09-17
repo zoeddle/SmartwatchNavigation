@@ -1,72 +1,123 @@
 package com.example.carola.smartwatchnavigation;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class NavigationActivity extends AppCompatActivity {
+import de.hadizadeh.positioning.controller.PositionListener;
+import de.hadizadeh.positioning.controller.PositionManager;
+import de.hadizadeh.positioning.controller.Technology;
+import de.hadizadeh.positioning.exceptions.PositioningException;
+import de.hadizadeh.positioning.exceptions.PositioningPersistenceException;
+import de.hadizadeh.positioning.model.PositionInformation;
+
+public class NavigationActivity extends AppCompatActivity implements PositionListener {
 
     private ImageView image;
-    private Bitmap mutableBitmap;
-    private Canvas canvas;
+    //private Bitmap mutableBitmap;
+    //private Canvas canvas;
+    private PositionManager positionManager;
+    private NewXMLPersistenceManager xmlPersistenceManager;
+    private Node nodeToSearch;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(com.example.carola.smartwatchnavigation.R.layout.activity_navigation);
+        
+        image = (ImageView) findViewById(R.id.i_floorPlan);
+        
+        ArrayList<Node> existingNodes = initializationAndFindExistingNodes();
+        
+        positionManager.startPositioning(1000);
 
-        image = (ImageView) findViewById(com.example.carola.smartwatchnavigation.R.id.i_floorPlan);
-        Bitmap bitmap = ((BitmapDrawable) image.getDrawable()).getBitmap();
+        Intent i= getIntent();
+        Bundle b = i.getExtras();
 
-        mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
-
-        canvas = new Canvas(mutableBitmap);
-
-        //ArrayList<Node> existingNodes = (ArrayList<Node>) getIntent().getSerializableExtra("allExistingNodes");
-
-        ArrayList<Node> existingNodes = Singleton.getInstance().getExistingNodes();
-
-        if(existingNodes != null){
-        for(int i = 0; i<existingNodes.size(); i++){
-                    drawNode(existingNodes.get(i).x, existingNodes.get(i).y);
+        if(b!=null && existingNodes!= null)
+        {
+            String query =(String) b.get("searchString");
+            for(Node searchNode : existingNodes){
+                if (searchNode.searchName.toLowerCase().equals(query.toLowerCase())){
+                    nodeToSearch=searchNode;
                 }
-            ArrayList<Node> path;
-            if(Singleton.getInstance().getSearchNode()!= null){
-                path = aStar(existingNodes.get(0), Singleton.getInstance().getSearchNode());
-            }
-            else {
-                path = aStar(existingNodes.get(0), existingNodes.get(7));
-            }
-            if(path != null){
-                Log.e("Liste", "Liste erstellt");
-
-                Node currNodeToDraw = null;
-                for(Node nextNodeToDraw : path) {
-                    if (currNodeToDraw != null) {
-                        drawLine(currNodeToDraw,nextNodeToDraw);
-                    }
-                    currNodeToDraw = nextNodeToDraw;
+                else {
+                    // TODO fehlerbehebung
                 }
             }
-
         }
+        else {
+            //TODO Fehlerbehebung
+        }
+        
 
-        //drawLine(existingNodes.get(0), existingNodes.get(1));
     }
 
-    private void drawNode(float x, float y) {
+    private ArrayList<Node> initializationAndFindExistingNodes() {
+        File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "myHome.xml");
+        //File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "og6Information.xml");
+
+        try {
+            xmlPersistenceManager = new NewXMLPersistenceManager(file);
+            positionManager = new PositionManager(xmlPersistenceManager);
+            List<String> keyWhiteList = new ArrayList<String>();
+            //weihiteList Julian
+//        keyWhiteList.add("88:03:55:0b:22:44".toLowerCase());
+//        keyWhiteList.add("bc:05:43:b4:3d:72".toLowerCase());
+//        keyWhiteList.add("34:81:c4:f9:22:b5".toLowerCase());
+//        keyWhiteList.add("5c:35:3b:ef:e0:ec".toLowerCase());
+//        keyWhiteList.add("e8:37:7a:1a:56:5b".toLowerCase());
+//        keyWhiteList.add("34:81:c4:c7:46:50".toLowerCase());
+            //whiteList zuHause
+            keyWhiteList.add("58:8b:f3:50:da:b1".toLowerCase());
+            keyWhiteList.add("18:83:bf:d1:ff:72".toLowerCase());
+            keyWhiteList.add("00:1e:be:8c:d6:a0".toLowerCase());
+            Technology wifiTechnology = new WifiTechnology(this, "WIFI", keyWhiteList);
+
+            try {
+                positionManager.addTechnology(wifiTechnology);
+            } catch (PositioningException e) {
+                e.printStackTrace();
+            }
+            positionManager.registerPositionListener(this);
+
+            Log.d("positionManager", "initialized");
+
+
+            List<String> positions = positionManager.getMappedPositions();
+            if (positions != null){
+                ArrayList<Node> actuallyNodes = new ArrayList<Node>();
+                for(String nodeName : positions) {
+                    Node nodeToAdd = xmlPersistenceManager.getNodeData(nodeName);
+                    actuallyNodes.add(nodeToAdd);
+                }
+                return actuallyNodes;
+
+            }
+        } catch (PositioningPersistenceException e) {
+            //TODO fehlermeldung
+        }
+
+        return null;
+    }
+
+    private void drawNode(float x, float y, Canvas canvas) {
+
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         paint.setColor(Color.BLUE);
@@ -74,14 +125,14 @@ public class NavigationActivity extends AppCompatActivity {
 
         canvas.drawCircle(x, y, 25, paint);
 
-        image.setImageBitmap(mutableBitmap);
+        //image.setImageBitmap(mutableBitmap);
     }
 
-    private void drawLine(Node start, Node end){
+    private void drawLine(Node start, Node end, Canvas canvas){
 
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        paint.setColor(Color.GREEN);
+        paint.setColor(Color.BLUE);
         paint.setStrokeWidth(10);
 
         float startx = start.x;
@@ -91,7 +142,7 @@ public class NavigationActivity extends AppCompatActivity {
 
         canvas.drawLine(startx, starty, endx, endy, paint);
 
-        image.setImageBitmap(mutableBitmap);
+        //image.setImageBitmap(mutableBitmap);
     }
 
     private ArrayList<Node> aStar(Node start, Node end){
@@ -118,7 +169,7 @@ public class NavigationActivity extends AppCompatActivity {
 
         // Wurde das Ziel gefunden?
         if (currentNode.node == end){
-            //path.add(currentNode.node);
+            //Pfad rekonsturktion
             while (currentNode.node != start){
                 path.add(currentNode.node);
                 currentNode = currentNode.predecessorNode;
@@ -207,7 +258,6 @@ public class NavigationActivity extends AppCompatActivity {
 
             if (foundInOpenList){
                 Log.d("node", "node ist gleich");
-                //openList.decreaseKey(successor, f);
                 continue;
             }
             else
@@ -227,4 +277,57 @@ public class NavigationActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    public void positionReceived(PositionInformation positionInformation) {
+
+    }
+
+    @Override
+    public void positionReceived(List<PositionInformation> list) {
+        String positionName = list.get(0).getName();
+        final Node recievedNode = xmlPersistenceManager.getNodeData(positionName);
+        final ArrayList<Node> path;
+
+        //TODO performence sparen wenn Node gleich vorheriger
+            if(nodeToSearch!= null && recievedNode != null){
+                path = aStar(recievedNode, nodeToSearch);
+                Log.e("Liste", "Liste erstellt");
+            }
+            else {
+                path = null;
+                this.finish();
+            }
+            if(path != null){
+                
+
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        image.setImageResource(R.drawable.wohnung_grundriss);
+                        Bitmap bitmap = ((BitmapDrawable) image.getDrawable()).getBitmap();
+
+                        Bitmap mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+                        Canvas canvas = new Canvas(mutableBitmap);
+
+                        drawNode(recievedNode.x, recievedNode.y, canvas);
+                        drawNode(nodeToSearch.x, nodeToSearch.y, canvas);
+
+                        Node currNodeToDraw = null;
+                        for (Node nextNodeToDraw : path) {
+                            if (currNodeToDraw != null) {
+                                drawLine(currNodeToDraw, nextNodeToDraw, canvas);
+                            }
+                            currNodeToDraw = nextNodeToDraw;
+                        }
+
+                        image.setImageBitmap(mutableBitmap);
+                    }
+                });
+
+            }
+
+        //drawNode(recievedNode.x,recievedNode.y);
+    }
 }
