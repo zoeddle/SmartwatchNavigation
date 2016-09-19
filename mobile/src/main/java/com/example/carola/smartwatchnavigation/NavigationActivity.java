@@ -1,5 +1,6 @@
 package com.example.carola.smartwatchnavigation;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -7,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Environment;
+import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -43,7 +45,7 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         image = (ImageView) findViewById(R.id.i_floorPlan);
         
         ArrayList<Node> existingNodes = initializationAndFindExistingNodes();
-        
+
         positionManager.startPositioning(1000);
 
         Intent i= getIntent();
@@ -291,15 +293,26 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         //TODO performence sparen wenn Node gleich vorheriger
             if(nodeToSearch!= null && recievedNode != null){
                 path = aStar(recievedNode, nodeToSearch);
-                Log.e("Liste", "Liste erstellt");
+                Log.d("Liste", "Liste erstellt");
             }
             else {
                 path = null;
                 this.finish();
             }
             if(path != null){
-                
 
+                //TODO Path Informationen berechnen
+                ArrayList<PathInforamtion> pathInforamtionList = new ArrayList<>();
+                for (int i = 0; i<path.size()-2; i++){
+                    double m1,m2,tan,angle;
+                    m1= (path.get(i+1).y - path.get(i).y)/(path.get(i+1).x - path.get(i).x);
+                    m2= (path.get(i+2).y - path.get(i+1).y)/(path.get(i+2).x - path.get(i+1).x);
+                    tan= Math.abs((m1-m2/(1+m1*m2)));
+                    double arctan=Math.atan(tan);
+                    double test = 7./6.;
+                    angle = Math.toDegrees(test);
+                    pathInforamtionList.add(new PathInforamtion(m1,m2,tan,angle));
+                }
 
                 runOnUiThread(new Runnable() {
                     @Override
@@ -328,6 +341,5 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
             }
 
-        //drawNode(recievedNode.x,recievedNode.y);
     }
 }

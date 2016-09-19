@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Vibrator;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,9 +18,13 @@ import android.widget.Button;
 import android.widget.SearchView;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.widget.Toast;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
 import de.hadizadeh.positioning.controller.PositionManager;
 import de.hadizadeh.positioning.exceptions.PositioningPersistenceException;
 
@@ -26,12 +32,13 @@ public class MainActivity extends AppCompatActivity{
 
     private static final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 3;
     String[] permissions;
+    TextToSpeech tts;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(com.example.carola.smartwatchnavigation.R.layout.activity_main);
+        setContentView(R.layout.activity_main);
 
         permissions = new String[]{
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -43,31 +50,36 @@ public class MainActivity extends AppCompatActivity{
             //show Massage
         }
 
-        //allNodes = findExistingNodes();
-
-        final Button buttonSetting = (Button) findViewById(com.example.carola.smartwatchnavigation.R.id.b_settings);
-        buttonSetting.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-
-                Intent i = new Intent(MainActivity.this, SettingActivity.class);
-                startActivity(i);
-
+        tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status != TextToSpeech.ERROR) {
+                    tts.setLanguage(Locale.GERMANY);
+//                    tts.setPitch(1.3f);
+//                    tts.setSpeechRate(1f);
+                }
             }
         });
 
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-//        final Button buttonNavigation = (Button) findViewById(com.example.carola.smartwatchnavigation.R.id.b_navigation);
-//        buttonNavigation.setOnClickListener(new View.OnClickListener() {
-//            public void onClick(View v) {
-//
-//                //TODO Permission Check
-//                Singleton.getInstance().setExistingNodes(allNodes);
-//                Intent i = new Intent(MainActivity.this, NavigationActivity.class);
-//                //i.putExtra("allExistingNodes", allNodes );
-//                startActivity(i);
-//
-//            }
-//        });
+        long[] pattern = {0, 400, 200, 400};
+
+        v.vibrate(pattern, -1);
+
+
+        tts.speak("links", TextToSpeech.QUEUE_FLUSH, null);
+
+        //allNodes = findExistingNodes();
+
+        final Button buttonSetting = (Button) findViewById(R.id.b_settings);
+        buttonSetting.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, SettingActivity.class);
+                startActivity(i);
+            }
+        });
+
 
         handleIntent(getIntent());
 
@@ -87,14 +99,6 @@ public class MainActivity extends AppCompatActivity{
         Intent i = new Intent(MainActivity.this, NavigationActivity.class);
         i.putExtra("searchString", query);
         startActivity(i);
-//        for(Node searchNode : allNodes){
-//            if (searchNode.searchName.toLowerCase().equals(query.toLowerCase())){
-//                Singleton.getInstance().setSearchNode(searchNode);
-//                //Singleton.getInstance().setExistingNodes(allNodes);
-//                Intent i = new Intent(MainActivity.this, NavigationActivity.class);
-//                startActivity(i);
-//            }
-//        }
     }
 
     private boolean hasPermissions(Context context, String[] permissions) {
