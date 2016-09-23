@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Environment;
@@ -87,8 +88,12 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 //        keyWhiteList.add("34:81:c4:c7:46:50".toLowerCase());
             //whiteList zuHause
             keyWhiteList.add("58:8b:f3:50:da:b1".toLowerCase());
+            keyWhiteList.add("18:83:bf:ae:97:d4".toLowerCase());
+            keyWhiteList.add("34:31:c4:0c:cf:7e".toLowerCase());
+            keyWhiteList.add("18:83:bf:ea:9a:90".toLowerCase());
             keyWhiteList.add("18:83:bf:d1:ff:72".toLowerCase());
-            keyWhiteList.add("00:1e:be:8c:d6:a0".toLowerCase());
+            keyWhiteList.add("5c:dc:96:bc:39:80".toLowerCase());
+            keyWhiteList.add("a0:e4:cb:a5:41:a1".toLowerCase());
             Technology wifiTechnology = new WifiTechnology(this, "WIFI", keyWhiteList);
 
             try {
@@ -290,7 +295,7 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         final Node recievedNode = xmlPersistenceManager.getNodeData(positionName);
         final ArrayList<Node> path;
 
-        //TODO performence sparen wenn Node gleich vorheriger
+        //TODO performence sparen wenn Node gleich vorheriger und abbruch bei endknoten
             if(nodeToSearch!= null && recievedNode != null){
                 path = aStar(recievedNode, nodeToSearch);
                 Log.d("Liste", "Liste erstellt");
@@ -303,15 +308,20 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
                 //TODO Path Informationen berechnen
                 ArrayList<PathInforamtion> pathInforamtionList = new ArrayList<>();
-                for (int i = 0; i<path.size()-2; i++){
-                    double m1,m2,tan,angle;
-                    m1= (path.get(i+1).y - path.get(i).y)/(path.get(i+1).x - path.get(i).x);
-                    m2= (path.get(i+2).y - path.get(i+1).y)/(path.get(i+2).x - path.get(i+1).x);
-                    tan= Math.abs((m1-m2/(1+m1*m2)));
-                    double arctan=Math.atan(tan);
-                    double test = 7./6.;
-                    angle = Math.toDegrees(test);
-                    pathInforamtionList.add(new PathInforamtion(m1,m2,tan,angle));
+
+                for (int i = 0; i<path.size()-1; i++){
+                    double angle;
+                    boolean turnLeft;
+
+                    if (i == 0){
+                        pathInforamtionList.add(new PathInforamtion(Double.NaN,1));
+                    }
+                    else{
+                        angle= getVectorAngle(path.get(i-1).x,path.get(i).x,path.get(i+1).x,path.get(i-1).y,path.get(i).y,path.get(i+1).y);
+                        pathInforamtionList.add(new PathInforamtion(angle,1));
+
+                        turnLeft = (angle>180);
+                    }
                 }
 
                 runOnUiThread(new Runnable() {
@@ -341,5 +351,56 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
             }
 
+    }
+
+    private double getLenght(double pointOneX, double pointTwoX, double pointOneY, double pointTwoY){
+        double lenghtInPixel;
+        double lenghtInM;
+
+        lenghtInPixel = Math.sqrt(Math.pow((pointTwoX-pointOneX),2)+Math.pow((pointTwoY-pointOneY),2));
+        return lenghtInPixel;
+    }
+    private double getVectorAngle(double pointOneX, double pointTwoX, double pointThreeX, double pointOneY, double pointTwoY, double pointThreeY)
+    {
+        //(return Math.acos(((ax * bx) + (ay * by)) / ((Math.sqrt(Math.pow(ax, 2) + Math.pow(ay, 2))) * (Math.sqrt(Math.pow(bx, 2) + Math.pow(by, 2)))));
+        double ax,ay,nax,nay;
+        double bx,by,nbx,nby;
+        double vectorLenghta, vectorLenghtb;
+        double cosa,cosb;
+        double angle;
+
+        ax = (pointTwoX - pointOneX)*-1;
+        ay = (pointTwoY - pointOneY)*-1;
+
+        bx = (pointThreeX - pointTwoX);
+        by = (pointThreeY - pointTwoY);
+
+        vectorLenghta = Math.sqrt(Math.pow(ax,2) + Math.pow(ay,2));
+        vectorLenghtb = Math.sqrt(Math.pow(bx,2) + Math.pow(by,2));
+
+        nax = (1/vectorLenghta)*ax;
+        nay = (1/vectorLenghta)*ay;
+
+        nbx = (1/vectorLenghtb)*bx;
+        nby = (1/vectorLenghtb)*by;
+
+        if(nay>0){
+            cosa = Math.toDegrees(Math.acos(nax));
+        }else{
+            cosa = 360- Math.toDegrees(Math.acos(nax));
+        }
+
+        if(nby>0){
+            cosb = Math.toDegrees(Math.acos(nbx));
+        }else{
+            cosb = 360- Math.toDegrees(Math.acos(nbx));
+        }
+
+        angle = cosb-cosa;
+
+        if(angle<0){
+            angle = angle +360;
+        }
+        return angle;
     }
 }
