@@ -36,6 +36,8 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
     private PositionManager positionManager;
     private NewXMLPersistenceManager xmlPersistenceManager;
     private Node nodeToSearch;
+    private Node recievedNode;
+    private ArrayList<Node> path;
 
 
     @Override
@@ -48,6 +50,8 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         ArrayList<Node> existingNodes = initializationAndFindExistingNodes();
 
         positionManager.startPositioning(1000);
+
+        path = null;
 
         Intent i= getIntent();
         Bundle b = i.getExtras();
@@ -67,7 +71,7 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         else {
             //TODO Fehlerbehebung
         }
-        
+
 
     }
 
@@ -292,73 +296,114 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
     @Override
     public void positionReceived(List<PositionInformation> list) {
         String positionName = list.get(0).getName();
-        final Node recievedNode = xmlPersistenceManager.getNodeData(positionName);
-        final ArrayList<Node> path;
 
-        //TODO performence sparen wenn Node gleich vorheriger und abbruch bei endknoten
-            if(nodeToSearch!= null && recievedNode != null){
-                path = aStar(recievedNode, nodeToSearch);
-                Log.d("Liste", "Liste erstellt");
+        // wenn kein Pfad da ist Pfad berechnen und hier auch das erste mal recieve Node setzten
+        // Wenn Pfad da überprüfen ob noch gleichen Knoten dann abbrechen sonst überprüfen ob knoten auf pfad wenn ja position ermitteln und sachen wenn nicht pfad neu berechnen
+
+        if(path == null){
+            recievedNode = xmlPersistenceManager.getNodeData(positionName);
+            buildPath();
+        }
+        else {
+            if(recievedNode.name == positionName){
+                Log.d("Gleich", "Die Nodes sind gleich");
+                return;
             }
             else {
-                path = null;
-                this.finish();
-            }
-            if(path != null){
+                recievedNode = xmlPersistenceManager.getNodeData(positionName);
 
-                //TODO Path Informationen berechnen
-                ArrayList<PathInforamtion> pathInforamtionList = new ArrayList<>();
-
-                for (int i = 0; i<path.size()-1; i++){
-                    double angle;
-                    boolean turnLeft;
-
-                    if (i == 0){
-                        pathInforamtionList.add(new PathInforamtion(Double.NaN,1));
-                    }
-                    else{
-                        angle= getVectorAngle(path.get(i-1).x,path.get(i).x,path.get(i+1).x,path.get(i-1).y,path.get(i).y,path.get(i+1).y);
-                        pathInforamtionList.add(new PathInforamtion(angle,1));
-
-                        turnLeft = (angle>180);
+                for(int i = 0; i<path.size(); i++){
+                    if(path.get(i).name.equals(positionName)){
+                        Log.d("Enthalten", "Knoten ist in Pfad enthalten");
+                        drawPath(path.get(i).x, path.get(i).y);
+                        return;
                     }
                 }
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        image.setImageResource(R.drawable.wohnung_grundriss);
-                        Bitmap bitmap = ((BitmapDrawable) image.getDrawable()).getBitmap();
-
-                        Bitmap mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
-
-                        Canvas canvas = new Canvas(mutableBitmap);
-
-                        drawNode(recievedNode.x, recievedNode.y, canvas);
-                        drawNode(nodeToSearch.x, nodeToSearch.y, canvas);
-
-                        Node currNodeToDraw = null;
-                        for (Node nextNodeToDraw : path) {
-                            if (currNodeToDraw != null) {
-                                drawLine(currNodeToDraw, nextNodeToDraw, canvas);
-                            }
-                            currNodeToDraw = nextNodeToDraw;
-                        }
-
-                        image.setImageBitmap(mutableBitmap);
-                    }
-                });
-
+                buildPath();
+                Log.d("Neu", "Neuer Pfad berechnet");
             }
+        }
+
+    }
+
+    private void buildPath(){
+        //recievedNode = xmlPersistenceManager.getNodeData(positionName);
+
+        if(nodeToSearch!= null && recievedNode != null){
+            if(nodeToSearch == recievedNode){
+                Log.d("Ende", "Ziel erreicht");
+                return;
+            }
+            //path = aStar(recievedNode, nodeToSearch);
+            path = aStar(nodeToSearch, recievedNode);
+            Log.d("Liste", "Liste erstellt");
+        }
+        else {
+            path = null;
+            this.finish();
+        }
+        if(path != null){
+            ArrayList<PathInforamtion> pathInforamtionList = new ArrayList<>();
+
+            for (int i = 0; i<path.size()-1; i++){
+                double angle;
+                double lenght;
+
+                if (i == 0){
+                    lenght = getLenght(path.get(i).x,path.get(i+1).x,path.get(i).y,path.get(i+1).y);
+                    pathInforamtionList.add(new PathInforamtion(Double.NaN,lenght));
+                }
+                else{
+                    angle= getVectorAngle(path.get(i - 1).x, path.get(i).x, path.get(i + 1).x, path.get(i - 1).y, path.get(i).y, path.get(i + 1).y);
+                    lenght = getLenght(path.get(i).x, path.get(i + 1).x, path.get(i).y, path.get(i + 1).y);
+                    pathInforamtionList.add(new PathInforamtion(angle,lenght));
+                }
+            }
+
+            drawPath(recievedNode.x, recievedNode.y);
+
+        }
+    }
+
+    private void drawPath(final float x, final float y) {
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                image.setImageResource(R.drawable.wohnung_grundriss);
+                Bitmap bitmap = ((BitmapDrawable) image.getDrawable()).getBitmap();
+
+                Bitmap mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+                Canvas canvas = new Canvas(mutableBitmap);
+
+                drawNode(x, y, canvas);
+                drawNode(nodeToSearch.x, nodeToSearch.y, canvas);
+
+                Node currNodeToDraw = null;
+                for (Node nextNodeToDraw : path) {
+                    if (currNodeToDraw != null) {
+                        drawLine(currNodeToDraw, nextNodeToDraw, canvas);
+                    }
+                    currNodeToDraw = nextNodeToDraw;
+                }
+
+                image.setImageBitmap(mutableBitmap);
+            }
+        });
 
     }
 
     private double getLenght(double pointOneX, double pointTwoX, double pointOneY, double pointTwoY){
+        double referencePointInPixel = 131;
+        double referencePointInM = 3.45;
         double lenghtInPixel;
         double lenghtInM;
 
         lenghtInPixel = Math.sqrt(Math.pow((pointTwoX-pointOneX),2)+Math.pow((pointTwoY-pointOneY),2));
-        return lenghtInPixel;
+        lenghtInM = (referencePointInM/referencePointInPixel)*lenghtInPixel;
+        return lenghtInM;
     }
     private double getVectorAngle(double pointOneX, double pointTwoX, double pointThreeX, double pointOneY, double pointTwoY, double pointThreeY)
     {
