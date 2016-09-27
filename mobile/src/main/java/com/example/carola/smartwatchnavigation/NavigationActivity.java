@@ -14,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
+import android.widget.ListView;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -38,12 +39,15 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
     private Node nodeToSearch;
     private Node recievedNode;
     private ArrayList<Node> path;
+    private ListView listView;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(com.example.carola.smartwatchnavigation.R.layout.activity_navigation);
+
+        listView = (ListView) findViewById(R.id.l_pathInformation);
         
         image = (ImageView) findViewById(R.id.i_floorPlan);
         
@@ -303,6 +307,7 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         if(path == null){
             recievedNode = xmlPersistenceManager.getNodeData(positionName);
             buildPath();
+
         }
         else {
             if(recievedNode.name == positionName){
@@ -362,6 +367,16 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
             }
 
             drawPath(recievedNode.x, recievedNode.y);
+
+            final PathInformationAdapter adapter = new PathInformationAdapter(this, (ArrayList<PathInforamtion>) pathInforamtionList);
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+
+            listView.setAdapter(adapter);
+                }
+            });
 
         }
     }
