@@ -13,8 +13,8 @@ import java.util.ArrayList;
  * Created by Carola on 27.09.16.
  */
 public class PathInformationAdapter extends ArrayAdapter<PathInforamtion> {
-    public PathInformationAdapter(Context context, ArrayList<PathInforamtion> information) {
-        super(context, 0, information);
+    public PathInformationAdapter(Context context) {
+        super(context, 0);
     }
 
     @Override
@@ -32,11 +32,11 @@ public class PathInformationAdapter extends ArrayAdapter<PathInforamtion> {
         if(information.angle <180){
             tvName.setText("links");
         }
-        else if(Double.isNaN(information.angle)){
-            tvName.setText(" ");
+        else if(information.angle >180){
+            tvName.setText("rechts");
         }
         else {
-            tvName.setText("rechts");
+            tvName.setText(" ");
         }
         tvHome.setText((int) information.lenght +" m geradeaus");
         // Return the completed view to render on screen

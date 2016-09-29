@@ -6,4 +6,9 @@
         android:icon="@android:drawable/ic_menu_search"
         app:showAsAction="always|collapseActionView"
         app:actionViewClass="android.widget.SearchView" />
+    <item
+        android:id="@+id/action_contents"
+        android:title="bla"
+        android:icon="@android:drawable/btn_star"
+        app:showAsAction="always" />
 </menu>

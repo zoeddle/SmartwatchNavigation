@@ -1,22 +1,13 @@
 package com.example.carola.smartwatchnavigation;
 
 import android.Manifest;
-import android.app.Notification;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.BitmapFactory;
 import android.os.Build;
-import android.os.Vibrator;
-import android.speech.tts.TextToSpeech;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.NotificationManagerCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
-import android.support.v4.app.NotificationCompat.WearableExtender;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -25,17 +16,10 @@ import android.widget.SearchView;
 import android.view.Menu;
 import android.view.MenuInflater;
 
-import java.util.Locale;
-
 public class MainActivity extends AppCompatActivity {
 
     private static final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 3;
     String[] permissions;
-    TextToSpeech tts;
-    private NotificationCompat.Builder notification_builder;
-    private NotificationManagerCompat notification_manager;
-    private int notification_id = 1;
-    private final String NOTIFICATION_ID = "notification_id";
 
 
     @Override
@@ -53,44 +37,10 @@ public class MainActivity extends AppCompatActivity {
             //show Massage
         }
 
-        tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if (status != TextToSpeech.ERROR) {
-                    tts.setLanguage(Locale.GERMANY);
-//                    tts.setPitch(1.3f);
-//                    tts.setSpeechRate(1f);
-                }
-            }
-        });
-
-
-//        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-//
-//        long[] pattern = {0, 400, 200, 400};
-//
-//        v.vibrate(pattern, -1);
-//
-//
-//        tts.speak("links", TextToSpeech.QUEUE_FLUSH, null);
-//
-//        //allNodes = findExistingNodes();
-//
-//        notification_builder = new NotificationCompat.Builder(this)
-//                .setVibrate(pattern)
-//                .setSmallIcon(R.drawable.ic_media_play)
-//                .setLargeIcon(BitmapFactory.decodeResource(
-//                        getResources(), R.drawable.pfeil_links))
-//                .setContentTitle("Titel")
-//                .setContentText("Content");
-
-        //notification_manager = NotificationManagerCompat.from(this);
 
         final Button buttonSetting = (Button) findViewById(R.id.b_settings);
         buttonSetting.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-
-                //notification_manager.notify(notification_id,notification_builder.build());
 
                 Intent i = new Intent(MainActivity.this, SettingActivity.class);
                 startActivity(i);

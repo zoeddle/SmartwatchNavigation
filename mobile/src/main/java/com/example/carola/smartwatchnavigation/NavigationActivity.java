@@ -2,14 +2,22 @@ package com.example.carola.smartwatchnavigation;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
+import android.speech.tts.TextToSpeech;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,6 +28,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import de.hadizadeh.positioning.controller.PositionListener;
@@ -29,7 +38,7 @@ import de.hadizadeh.positioning.exceptions.PositioningException;
 import de.hadizadeh.positioning.exceptions.PositioningPersistenceException;
 import de.hadizadeh.positioning.model.PositionInformation;
 
-public class NavigationActivity extends AppCompatActivity implements PositionListener {
+public class NavigationActivity extends AppCompatActivity implements PositionListener, TextToSpeech.OnInitListener {
 
     private ImageView image;
     //private Bitmap mutableBitmap;
@@ -40,6 +49,9 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
     private Node recievedNode;
     private ArrayList<Node> path;
     private ListView listView;
+    private ArrayList<PathInforamtion> pathInforamtionList;
+    private PathInformationAdapter adapter;
+    private TextToSpeech tts;
 
 
     @Override
@@ -50,10 +62,17 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         listView = (ListView) findViewById(R.id.l_pathInformation);
         
         image = (ImageView) findViewById(R.id.i_floorPlan);
+
+        tts = new TextToSpeech(getApplicationContext(),this);
+
         
         ArrayList<Node> existingNodes = initializationAndFindExistingNodes();
 
         positionManager.startPositioning(1000);
+
+        adapter = new PathInformationAdapter(this);
+
+        listView.setAdapter(adapter);
 
         path = null;
 
@@ -77,6 +96,16 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         }
 
 
+//        tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+//            @Override
+//            public void onInit(int status) {
+//                if (status != TextToSpeech.ERROR) {
+//                    tts.setLanguage(Locale.GERMANY);
+//                }
+//            }
+//        });
+
+
     }
 
     private ArrayList<Node> initializationAndFindExistingNodes() {
@@ -87,18 +116,10 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
             xmlPersistenceManager = new NewXMLPersistenceManager(file);
             positionManager = new PositionManager(xmlPersistenceManager);
             List<String> keyWhiteList = new ArrayList<String>();
-            //weihiteList Julian
-//        keyWhiteList.add("88:03:55:0b:22:44".toLowerCase());
-//        keyWhiteList.add("bc:05:43:b4:3d:72".toLowerCase());
-//        keyWhiteList.add("34:81:c4:f9:22:b5".toLowerCase());
-//        keyWhiteList.add("5c:35:3b:ef:e0:ec".toLowerCase());
-//        keyWhiteList.add("e8:37:7a:1a:56:5b".toLowerCase());
-//        keyWhiteList.add("34:81:c4:c7:46:50".toLowerCase());
             //whiteList zuHause
             keyWhiteList.add("58:8b:f3:50:da:b1".toLowerCase());
-            keyWhiteList.add("18:83:bf:ae:97:d4".toLowerCase());
+            keyWhiteList.add("1c:74:0d:64:80:7b".toLowerCase());
             keyWhiteList.add("34:31:c4:0c:cf:7e".toLowerCase());
-            keyWhiteList.add("18:83:bf:ea:9a:90".toLowerCase());
             keyWhiteList.add("18:83:bf:d1:ff:72".toLowerCase());
             keyWhiteList.add("5c:dc:96:bc:39:80".toLowerCase());
             keyWhiteList.add("a0:e4:cb:a5:41:a1".toLowerCase());
@@ -317,16 +338,40 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
             else {
                 recievedNode = xmlPersistenceManager.getNodeData(positionName);
 
+                int position = 0;
+                boolean contain = false;
                 for(int i = 0; i<path.size(); i++){
                     if(path.get(i).name.equals(positionName)){
                         Log.d("Enthalten", "Knoten ist in Pfad enthalten");
-                        drawPath(path.get(i).x, path.get(i).y);
-                        return;
+                        contain = true;
+                        position = i;
                     }
                 }
 
-                buildPath();
-                Log.d("Neu", "Neuer Pfad berechnet");
+                if(contain){
+                    drawPath(path.get(position).x, path.get(position).y);
+
+                    final ArrayList<PathInforamtion> newPathInforamtionList = new ArrayList<>();
+
+                    for(int i = position; i<pathInforamtionList.size(); i++){
+                        newPathInforamtionList.add(new PathInforamtion(pathInforamtionList.get(position).angle,pathInforamtionList.get(position).lenght));
+                    }
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            adapter.clear();
+                            adapter.addAll(newPathInforamtionList);
+                            adapter.notifyDataSetChanged();
+                        }
+                    });
+
+                }
+                else {
+                    buildPath();
+                    Log.d("Neu", "Neuer Pfad berechnet");
+                }
             }
         }
 
@@ -334,7 +379,6 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
     private void buildPath(){
         //recievedNode = xmlPersistenceManager.getNodeData(positionName);
-
         if(nodeToSearch!= null && recievedNode != null){
             if(nodeToSearch == recievedNode){
                 Log.d("Ende", "Ziel erreicht");
@@ -349,7 +393,8 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
             this.finish();
         }
         if(path != null){
-            ArrayList<PathInforamtion> pathInforamtionList = new ArrayList<>();
+
+            pathInforamtionList = new ArrayList<>();
 
             for (int i = 0; i<path.size()-1; i++){
                 double angle;
@@ -368,15 +413,16 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
             drawPath(recievedNode.x, recievedNode.y);
 
-            final PathInformationAdapter adapter = new PathInformationAdapter(this, (ArrayList<PathInforamtion>) pathInforamtionList);
-
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-
-            listView.setAdapter(adapter);
+                    adapter.clear();
+                    adapter.addAll(pathInforamtionList);
+                    adapter.notifyDataSetChanged();
                 }
             });
+
+            checkSettingsAndReveiveInstruction(1);
 
         }
     }
@@ -407,6 +453,96 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
                 image.setImageBitmap(mutableBitmap);
             }
         });
+
+    }
+
+    private void checkSettingsAndReveiveInstruction(int instruction){
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+
+        boolean sound = sharedPref.getBoolean("pref_key_sound", true);
+        boolean hapticalFeedback = sharedPref.getBoolean("pref_key_hapticalFeedback", true);
+//        int left = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackLeft", "1"));
+//        int right = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackRight", "2"));
+//        int straightOn = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackStraightOn", "3"));
+
+        int walk = 0;
+
+        long[] pattern;
+
+        if(sound){
+            switch(instruction) {
+                case 1:
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        tts.speak("links", TextToSpeech.QUEUE_FLUSH, null, null);
+                    }
+                    else {
+                        tts.speak("links", TextToSpeech.QUEUE_FLUSH, null);
+                    }
+                    break;
+                case 2:
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        tts.speak("rechts", TextToSpeech.QUEUE_FLUSH, null, null);
+                    }
+                    else {
+                        tts.speak("rechts", TextToSpeech.QUEUE_FLUSH, null);
+                    }
+                    break;
+                case 3:
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        tts.speak("geradeaus", TextToSpeech.QUEUE_FLUSH, null, null);
+                    }
+                    else {
+                        tts.speak("geradeaus", TextToSpeech.QUEUE_FLUSH, null);
+                    }
+                    break;
+            }
+        }
+
+        if(hapticalFeedback){
+            switch(instruction) {
+                case 1:
+                    walk = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackLeft", "1"));
+                    break;
+                case 2:
+                    walk = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackRight", "2"));
+                    break;
+                case 3:
+                    walk = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackStraightOn", "3"));
+                    break;
+            }
+
+            switch (walk){
+                case 1:
+                    pattern = new long[]{0, 400};
+                    break;
+                case 2:
+                    pattern = new long[]{0, 400, 200, 400};
+                    break;
+                case 3:
+                    pattern = new long[]{0, 400, 200, 400, 200, 400};
+                    break;
+                default:
+                    pattern = null;
+                    break;
+            }
+
+            NotificationCompat.Builder notification_builder;
+            NotificationManagerCompat notification_manager;
+            int notification_id = 1;
+            final String NOTIFICATION_ID = "notification_id";
+
+            notification_builder = new NotificationCompat.Builder(this)
+                .setVibrate(pattern)
+                .setSmallIcon(R.drawable.ic_media_play)
+                .setLargeIcon(BitmapFactory.decodeResource(
+                        getResources(), R.drawable.pfeil_links))
+                .setContentTitle("Titel")
+                .setContentText("Content");
+
+            notification_manager = NotificationManagerCompat.from(this);
+
+            notification_manager.notify(notification_id,notification_builder.build());
+        }
 
     }
 
@@ -462,5 +598,14 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
             angle = angle +360;
         }
         return angle;
+    }
+
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts.setLanguage(Locale.GERMANY);
+        } else {
+            Log.e("TTS", "Initialization failed");
+        }
     }
 }
