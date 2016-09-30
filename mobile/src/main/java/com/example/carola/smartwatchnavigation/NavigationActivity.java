@@ -24,12 +24,17 @@ import android.util.Log;
 import android.widget.ImageView;
 import android.widget.ListView;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Wearable;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import de.hadizadeh.positioning.controller.PositionListener;
 import de.hadizadeh.positioning.controller.PositionManager;
@@ -52,6 +57,8 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
     private ArrayList<PathInforamtion> pathInforamtionList;
     private PathInformationAdapter adapter;
     private TextToSpeech tts;
+    private GoogleApiClient client;
+    private String nodeId;
 
 
     @Override
@@ -65,6 +72,7 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
         tts = new TextToSpeech(getApplicationContext(),this);
 
+        //initializeGoogleAPI();
         
         ArrayList<Node> existingNodes = initializationAndFindExistingNodes();
 
@@ -107,6 +115,7 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
 
     }
+
 
     private ArrayList<Node> initializationAndFindExistingNodes() {
         File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "myHome.xml");
@@ -315,7 +324,6 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
     @Override
     public void positionReceived(PositionInformation positionInformation) {
-
     }
 
     @Override
@@ -354,7 +362,7 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
                     final ArrayList<PathInforamtion> newPathInforamtionList = new ArrayList<>();
 
                     for(int i = position; i<pathInforamtionList.size(); i++){
-                        newPathInforamtionList.add(new PathInforamtion(pathInforamtionList.get(position).angle,pathInforamtionList.get(position).lenght));
+                        newPathInforamtionList.add(new PathInforamtion(pathInforamtionList.get(i).angle,pathInforamtionList.get(i).lenght));
                     }
 
                     runOnUiThread(new Runnable() {
@@ -367,8 +375,19 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
                         }
                     });
 
-                }
-                else {
+                    if(newPathInforamtionList.get(0).angle<180)
+                    {
+                        checkSettingsAndReveiveInstruction(1);
+                    }
+                    else if(newPathInforamtionList.get(0).angle>180){
+                        checkSettingsAndReveiveInstruction(2);
+                    }
+                    else{
+                        checkSettingsAndReveiveInstruction(3);
+                    }
+
+
+                } else {
                     buildPath();
                     Log.d("Neu", "Neuer Pfad berechnet");
                 }
@@ -422,8 +441,6 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
                 }
             });
 
-            checkSettingsAndReveiveInstruction(1);
-
         }
     }
 
@@ -461,13 +478,12 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
         boolean sound = sharedPref.getBoolean("pref_key_sound", true);
         boolean hapticalFeedback = sharedPref.getBoolean("pref_key_hapticalFeedback", true);
-//        int left = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackLeft", "1"));
-//        int right = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackRight", "2"));
-//        int straightOn = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackStraightOn", "3"));
 
         int walk = 0;
 
         long[] pattern;
+
+        //sendMessage("test");
 
         if(sound){
             switch(instruction) {
@@ -529,19 +545,16 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
             NotificationCompat.Builder notification_builder;
             NotificationManagerCompat notification_manager;
             int notification_id = 1;
-            final String NOTIFICATION_ID = "notification_id";
 
             notification_builder = new NotificationCompat.Builder(this)
-                .setVibrate(pattern)
-                .setSmallIcon(R.drawable.ic_media_play)
-                .setLargeIcon(BitmapFactory.decodeResource(
-                        getResources(), R.drawable.pfeil_links))
-                .setContentTitle("Titel")
-                .setContentText("Content");
+                    .setContentTitle("Test")
+                    .setContentText("Content")
+                    .setSmallIcon(R.drawable.pfeil_links)
+                    .setVibrate(pattern);
 
             notification_manager = NotificationManagerCompat.from(this);
 
-            notification_manager.notify(notification_id,notification_builder.build());
+            notification_manager.notify(notification_id, notification_builder.build());
         }
 
     }
@@ -608,4 +621,42 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
             Log.e("TTS", "Initialization failed");
         }
     }
+
+//    private GoogleApiClient getGoogleApiClient(Context context) {
+//        return new GoogleApiClient.Builder(context)
+//                .addApi(Wearable.API)
+//                .build();
+//    }
+//
+//    private void initializeGoogleAPI() {
+//
+//        client = getGoogleApiClient(this);
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                client.blockingConnect(100, TimeUnit.MILLISECONDS);
+//                NodeApi.GetConnectedNodesResult result =
+//                        Wearable.NodeApi.getConnectedNodes(client).await();
+//                List<com.google.android.gms.wearable.Node> nodes = result.getNodes();
+//                if (nodes.size() > 0) {
+//                    nodeId = nodes.get(0).getId();
+//                }
+//                client.disconnect();
+//            }
+//        }).start();
+//    }
+//
+//
+//    private void sendMessage(final String message) {
+//        if (nodeId != null) {
+//            new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    client.blockingConnect(100, TimeUnit.MILLISECONDS);
+//                    Wearable.MessageApi.sendMessage(client, nodeId, message, null);
+//                    client.disconnect();
+//                }
+//            }).start();
+//        }
+//    }
 }
