@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
+import android.inputmethodservice.Keyboard;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
@@ -28,9 +29,21 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -95,11 +108,13 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
                     nodeToSearch=searchNode;
                 }
                 else {
+                    this.finish();
                     // TODO fehlerbehebung
                 }
             }
         }
         else {
+            this.finish();
             //TODO Fehlerbehebung
         }
 
@@ -118,20 +133,21 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
 
     private ArrayList<Node> initializationAndFindExistingNodes() {
-        File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "myHome.xml");
-        //File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "og6Information.xml");
+        //File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "myHome.xml");
+        File file = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "og6Information.xml");
 
         try {
             xmlPersistenceManager = new NewXMLPersistenceManager(file);
             positionManager = new PositionManager(xmlPersistenceManager);
             List<String> keyWhiteList = new ArrayList<String>();
+            keyWhiteList.addAll(getMacAdresses());
             //whiteList zuHause
-            keyWhiteList.add("58:8b:f3:50:da:b1".toLowerCase());
-            keyWhiteList.add("1c:74:0d:64:80:7b".toLowerCase());
-            keyWhiteList.add("34:31:c4:0c:cf:7e".toLowerCase());
-            keyWhiteList.add("18:83:bf:d1:ff:72".toLowerCase());
-            keyWhiteList.add("5c:dc:96:bc:39:80".toLowerCase());
-            keyWhiteList.add("a0:e4:cb:a5:41:a1".toLowerCase());
+//            keyWhiteList.add("58:8b:f3:50:da:b1".toLowerCase());
+//            keyWhiteList.add("1c:74:0d:64:80:7b".toLowerCase());
+//            keyWhiteList.add("34:31:c4:0c:cf:7e".toLowerCase());
+//            keyWhiteList.add("18:83:bf:d1:ff:72".toLowerCase());
+//            keyWhiteList.add("5c:dc:96:bc:39:80".toLowerCase());
+//            keyWhiteList.add("a0:e4:cb:a5:41:a1".toLowerCase());
             Technology wifiTechnology = new WifiTechnology(this, "WIFI", keyWhiteList);
 
             try {
@@ -159,6 +175,66 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         }
 
         return null;
+    }
+
+    private List<String> getMacAdresses() {
+        List<String> macAddresses = new ArrayList<>();
+        try {
+            List<String> assetList = Arrays.asList(this.getAssets().list(""));
+            for (String fileName : assetList) {
+                if (fileName.toLowerCase().contains("bssid")) {
+                    //readMacAdressesFormTxT(fileName, macAddresses);
+                    readMacAddressesFromXls(fileName, macAddresses);
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return macAddresses;
+    }
+
+    private void readMacAddressesFromXls(String filename, List<String> dest) throws IOException {
+        InputStream inputStream = this.getAssets().open(filename);
+        POIFSFileSystem poifsFileSystem = new POIFSFileSystem(inputStream);
+        HSSFWorkbook hssfWorkbook = new HSSFWorkbook(poifsFileSystem);
+        HSSFSheet sheet = hssfWorkbook.getSheetAt(0);
+        HSSFRow row;
+        HSSFCell cell;
+
+        Iterator<Row> rowIterator = sheet.rowIterator();
+        //TODO Clean this up quick way to skip the heading row
+        rowIterator.next();
+
+        while (rowIterator.hasNext()) {
+            row = (HSSFRow) rowIterator.next();
+            Iterator<Cell> cellIterator = row.cellIterator();
+            while (cellIterator.hasNext()) {
+                cell = (HSSFCell) cellIterator.next();
+                if (cell.getColumnIndex() == 4) {
+                    String address = addSeparator(cell.toString());
+                    if (! address.equals("")){
+                        dest.add(address);
+                    }
+                }
+            }
+        }
+
+    }
+
+    private String addSeparator(String macAddress) {
+
+        StringBuilder addressWithSeparator = new StringBuilder();
+
+        for (int i = 0; i < macAddress.length(); i++) {
+            if (i % 2 == 0 && i != 0) {
+                addressWithSeparator.append(":");
+            }
+            addressWithSeparator.append(macAddress.charAt(i));
+        }
+
+        return addressWithSeparator.toString();
     }
 
     private void drawNode(float x, float y, Canvas canvas) {

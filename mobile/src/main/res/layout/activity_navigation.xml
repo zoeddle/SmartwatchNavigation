@@ -11,7 +11,7 @@
     android:orientation="vertical">
 
     <ScrollView android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="300dp"
         android:id="@+id/scrollView"
         android:fillViewport="true"
         xmlns:android="http://schemas.android.com/apk/res/android">
@@ -21,7 +21,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/i_floorPlan"
             android:layout_alignParentTop="true"
-            android:src="@drawable/wohnung_grundriss"
+            android:src="@drawable/og6"
             android:adjustViewBounds="true"
             android:scaleType="matrix"/>
 
