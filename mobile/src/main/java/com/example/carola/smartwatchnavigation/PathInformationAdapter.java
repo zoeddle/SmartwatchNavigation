@@ -29,10 +29,10 @@ public class PathInformationAdapter extends ArrayAdapter<PathInforamtion> {
         TextView tvName = (TextView) convertView.findViewById(R.id.tv_listPathInformation);
         TextView tvHome = (TextView) convertView.findViewById(R.id.tv_listInformationInM);
         // Populate the data into the template view using the data object
-        if(information.angle <180){
+        if(information.angle <190){
             tvName.setText("links");
         }
-        else if(information.angle >180){
+        else if(information.angle >170){
             tvName.setText("rechts");
         }
         else {

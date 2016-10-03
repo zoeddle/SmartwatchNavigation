@@ -29,17 +29,11 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -108,13 +102,13 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
                     nodeToSearch=searchNode;
                 }
                 else {
-                    this.finish();
+                    super.onBackPressed();
                     // TODO fehlerbehebung
                 }
             }
         }
         else {
-            this.finish();
+            super.onBackPressed();
             //TODO Fehlerbehebung
         }
 
@@ -183,8 +177,7 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
             List<String> assetList = Arrays.asList(this.getAssets().list(""));
             for (String fileName : assetList) {
                 if (fileName.toLowerCase().contains("bssid")) {
-                    //readMacAdressesFormTxT(fileName, macAddresses);
-                    readMacAddressesFromXls(fileName, macAddresses);
+                    readMacAdressesFormTxT(fileName, macAddresses);
                 }
             }
 
@@ -195,46 +188,16 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         return macAddresses;
     }
 
-    private void readMacAddressesFromXls(String filename, List<String> dest) throws IOException {
-        InputStream inputStream = this.getAssets().open(filename);
-        POIFSFileSystem poifsFileSystem = new POIFSFileSystem(inputStream);
-        HSSFWorkbook hssfWorkbook = new HSSFWorkbook(poifsFileSystem);
-        HSSFSheet sheet = hssfWorkbook.getSheetAt(0);
-        HSSFRow row;
-        HSSFCell cell;
-
-        Iterator<Row> rowIterator = sheet.rowIterator();
-        //TODO Clean this up quick way to skip the heading row
-        rowIterator.next();
-
-        while (rowIterator.hasNext()) {
-            row = (HSSFRow) rowIterator.next();
-            Iterator<Cell> cellIterator = row.cellIterator();
-            while (cellIterator.hasNext()) {
-                cell = (HSSFCell) cellIterator.next();
-                if (cell.getColumnIndex() == 4) {
-                    String address = addSeparator(cell.toString());
-                    if (! address.equals("")){
-                        dest.add(address);
-                    }
-                }
+    private void readMacAdressesFormTxT(String fileName, List<String> dest) throws IOException {
+        InputStream inputStream = this.getAssets().open(fileName);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+        String line;
+        while ((line = bufferedReader.readLine()) != null && line.length() != 0) {
+            if (!dest.contains(line.toLowerCase())) {
+                dest.add(line.toLowerCase());
             }
         }
 
-    }
-
-    private String addSeparator(String macAddress) {
-
-        StringBuilder addressWithSeparator = new StringBuilder();
-
-        for (int i = 0; i < macAddress.length(); i++) {
-            if (i % 2 == 0 && i != 0) {
-                addressWithSeparator.append(":");
-            }
-            addressWithSeparator.append(macAddress.charAt(i));
-        }
-
-        return addressWithSeparator.toString();
     }
 
     private void drawNode(float x, float y, Canvas canvas) {
@@ -451,15 +414,15 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
                         }
                     });
 
-                    if(newPathInforamtionList.get(0).angle<180)
+                    if(newPathInforamtionList.get(0).angle<190)
                     {
-                        checkSettingsAndReveiveInstruction(1);
+                        checkSettingsAndReveiveInstruction(1,newPathInforamtionList.get(0).lenght);
                     }
-                    else if(newPathInforamtionList.get(0).angle>180){
-                        checkSettingsAndReveiveInstruction(2);
+                    else if(newPathInforamtionList.get(0).angle>170){
+                        checkSettingsAndReveiveInstruction(2,newPathInforamtionList.get(0).lenght);
                     }
                     else{
-                        checkSettingsAndReveiveInstruction(3);
+                        checkSettingsAndReveiveInstruction(3,newPathInforamtionList.get(0).lenght);
                     }
 
 
@@ -549,13 +512,15 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
 
     }
 
-    private void checkSettingsAndReveiveInstruction(int instruction){
+    private void checkSettingsAndReveiveInstruction(int instruction, double length){
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 
         boolean sound = sharedPref.getBoolean("pref_key_sound", true);
         boolean hapticalFeedback = sharedPref.getBoolean("pref_key_hapticalFeedback", true);
 
         int walk = 0;
+        String direction = null;
+        double description = length;
 
         long[] pattern;
 
@@ -593,12 +558,15 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         if(hapticalFeedback){
             switch(instruction) {
                 case 1:
+                    direction = "linke";
                     walk = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackLeft", "1"));
                     break;
                 case 2:
+                    direction = "rechts";
                     walk = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackRight", "2"));
                     break;
                 case 3:
+                    direction = "geradeaus";
                     walk = Integer.parseInt(sharedPref.getString("pref_key_hapticalFeedbackStraightOn", "3"));
                     break;
             }
@@ -623,8 +591,8 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
             int notification_id = 1;
 
             notification_builder = new NotificationCompat.Builder(this)
-                    .setContentTitle("Test")
-                    .setContentText("Content")
+                    .setContentTitle(direction)
+                    .setContentText("danach " + description +" m geradeaus")
                     .setSmallIcon(R.drawable.pfeil_links)
                     .setVibrate(pattern);
 
