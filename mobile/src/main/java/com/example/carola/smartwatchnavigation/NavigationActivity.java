@@ -488,7 +488,7 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                image.setImageResource(R.drawable.wohnung_grundriss);
+                image.setImageResource(R.drawable.og6);
                 Bitmap bitmap = ((BitmapDrawable) image.getDrawable()).getBitmap();
 
                 Bitmap mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
@@ -604,8 +604,8 @@ public class NavigationActivity extends AppCompatActivity implements PositionLis
     }
 
     private double getLenght(double pointOneX, double pointTwoX, double pointOneY, double pointTwoY){
-        double referencePointInPixel = 131;
-        double referencePointInM = 3.45;
+        double referencePointInPixel = 103;
+        double referencePointInM = 5;
         double lenghtInPixel;
         double lenghtInM;
 
